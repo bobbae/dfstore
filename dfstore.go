@@ -54,6 +54,9 @@ func New(ctx context.Context, kind string) (*DFStore, error) {
 	dfs := DFStore{}
 	dfs.Ctx = ctx
 	var URL string
+	//	TODO use configuration files and support security features
+	// default is postgresql.  document database defaults to mongodb
+	//  memory is redis, etc. to not hard-bind to specific database
 	if !strings.Contains(kind, ":")  {
 		switch kind {
 		case "default":
@@ -94,6 +97,8 @@ func New(ctx context.Context, kind string) (*DFStore, error) {
 	dfs.Q = u.RawQuery
 
 	q.Q(dfs)
+
+	//TODO support more databases and use tables 
 	switch dfs.Kind {
 	case "redis":
 		DBNum, err := strconv.Atoi(dfs.DBName)
@@ -164,6 +169,7 @@ func (dfs DFStore) Close() error {
 }
 
 func (dfs DFStore) WriteRecords(dataRows [][]string) error {
+	// TODO  use table to dispatch writes
 	switch dfs.Kind {
 	case "redis":
 		if err := dfs.RedisWriteRecords(dataRows); err != nil {
@@ -226,7 +232,8 @@ func (dfs DFStore) RedisWriteRecords(dataRows [][]string) error {
 			if cLen < 1 {
 				return fmt.Errorf("not enough columns")
 			}
-			
+			// schema is saved for each kind of data (a table is 
+			// simulated using key prefixes).
 			columns := strings.Join(cNames, ",")
 			key := fmt.Sprintf("schema:%s", dfs.TableName)
 			dfs.RedisClient.Set(key, columns, 0)
@@ -236,6 +243,7 @@ func (dfs DFStore) RedisWriteRecords(dataRows [][]string) error {
 		if len(row) != cLen {
 			return fmt.Errorf("row %d has %d columns, expected %d", i, len(row), cLen)
 		}
+		// simulate a table of rows using key prefixes
 		for j, val := range row {
 			key := fmt.Sprintf("%s:%d:%s", dfs.TableName, i, cNames[j])
 			pairs = append(pairs, key, val)
@@ -307,6 +315,7 @@ func (dfs DFStore) PostgresWriteRecords(dataRows [][]string) error {
 			}
 			columns = strings.Join(cNames, ",")
 			q.Q(columns)
+			// schema table has column names for each kind of data
 			qStr := "INSERT INTO schema (tablename, columns) VALUES " +
 				parenthesize(wrapValue(dfs.TableName) +  "," + wrapValue(columns))
 			q.Q(qStr)
@@ -438,6 +447,8 @@ func (dfs DFStore) RedisReadRecords(filters []dataframe.F, limit int) ([][]strin
 		results = append(results,ss)
 	}
 	q.Q(results)
+	// for each simulated key prefixed table all rows 
+	// are retrieved and dataframe filters are applied to the results
 	df := dataframe.LoadRecords(results)
 	
 	for _, filt := range filters {
