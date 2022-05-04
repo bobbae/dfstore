@@ -114,15 +114,15 @@ test> db.dropDatabase('test')
 test> use dfstore1
 switched to db dfstore1
 
-recordings> db.createCollection('table1')
+dfstore1> db.createCollection('table1')
 
-recordings> db.getCollectionNames()
+dfstore1> db.getCollectionNames()
 
-recordings>  db.createUser( { user: 'root',pwd: 'rootpass', roles: [ { role: "readWrite", db: "dfstore1"} ] } )
+dfstore1>  db.createUser( { user: 'root',pwd: 'rootpass', roles: [ { role: "readWrite", db: "dfstore1"} ] } )
 
-recordings> db.getUsers()
+dfstore1> db.getUsers()
 
-recordings> db.getCollection('table1').find().forEach(printjson)
+dfstore1> db.getCollection('table1').find().forEach(printjson)
 {
   _id: ObjectId("000000000000000000000000"),
   artist: 'John Coltrane',
@@ -139,7 +139,7 @@ recordings> db.getCollection('table1').find().forEach(printjson)
   price: 34.98
 }
 
-recordings>
+dfstore1>
 ```
 
 
